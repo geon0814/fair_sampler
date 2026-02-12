@@ -1,4 +1,4 @@
-# 📦 Fair-Sampler  
+#  Fair-Sampler  
 *By Geon*
 
 **Adaptive, feedback-controlled sampler that applies negative feedback to keep class distribution fair and stable during AI training.**  
@@ -9,7 +9,7 @@ Forces rapid convergence to target ratios — while preserving unbiased estimate
 ![Rebalance (99:1 → 50:50)](assets/fair_rebalance.png)
 ![Drift→Recovery (10 cycles)](assets/drift_recovery.png)
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Installation
 ```bash
@@ -51,7 +51,7 @@ for batch_indices in sampler:
     controller.step_update(y, losses=None)
 ```
 
-## 🎯 Core Concept
+##  Core Concept
 
 ### How It Works
 - **Negative Feedback Loop**: Undersampled classes receive higher sampling probability, automatically counteracting class imbalance.
@@ -118,7 +118,7 @@ for batch_indices in sampler:
     pass
 ```
 
-## 🔄 Reproducibility
+##  Reproducibility
 
 Ensure deterministic results:
 ```python
@@ -134,7 +134,7 @@ if torch.cuda.is_available():
     torch.cuda.manual_seed_all(42)
 ```
 
-## 📚 API Reference
+##  API Reference
 
 ### FeedbackController
 ```python
@@ -170,7 +170,7 @@ w = importance_weights(
 )
 ```
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 | Issue | Cause | Solution |
 |-------|-------|----------|
@@ -179,11 +179,11 @@ w = importance_weights(
 | Extreme importance weights | Large p-q mismatch | Use `max_w` clipping or increase `min_prob` |
 | Loss spikes | Rapid concept drift | Reduce `alpha`, implement alpha scheduling |
 
-## 📄 License
+##  License
 
 See `LICENSE` file for details.
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions are welcome! Please open issues or pull requests for bugs, features, or documentation improvements.
 
