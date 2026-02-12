@@ -1,87 +1,55 @@
-#  fair_sampler
+# 📦 Fair-Sampler  
+*By Geon*
 
-**Fair Sampler: An adaptive sampling method using negative feedback for balanced AI training.**
-
-Adaptive, feedback-controlled sampler that applies negative feedback to keep class distribution fair and stable during AI training. Forces rapid convergence to target ratios — while preserving unbiased estimates via **importance weighting**.
-
-*(실전 롱테일/드리프트 환경에서 샘플링 비율을 실시간 제어하고, 중요도 가중치로 편향 없이 학습)*
+**Adaptive, feedback-controlled sampler that applies negative feedback to keep class distribution fair and stable during AI training.**  
+Forces rapid convergence to target ratios — while preserving unbiased estimates via **importance weighting**.
+// 실전 롱테일/드리프트 환경에서 샘플링 비율을 실시간 제어하고, 중요도 가중치로 편향 없이 학습
 
 ![Rebalance (99:1 → 50:50)](assets/fair_rebalance.png)
 ![Drift→Recovery (10 cycles)](assets/drift_recovery.png)
 
----
-
-##  Key Features
-* **Real-time Adaptation**: Instantly responds to class imbalance using negative feedback.
-* **Unbiased Learning**: Mathematical consistency via Importance Weighting (IW).
-* **M-Series Optimized**: Specifically tuned for Apple Silicon (M1/M2/M3) & Python 3.14+.
-
----
-
-##  Installation & Setup for Mac
-
+## Install
 ```bash
 pip install -e .
+```
 
-[!IMPORTANT]
-Note for Mac/Python 3.14+ Users:
-To avoid PickleError and MPS (GPU) memory warnings, always configure your DataLoader as follows:
-
-num_workers=0 (Required for multiprocessing compatibility)
-
-pin_memory=False (Recommended to avoid MPS warnings)
-
-
+## Quick Start
+```python
 from gfs.controller import FeedbackController
 from gfs.batch_sampler import FeedbackBatchSampler
 from gfs.iw import importance_weights
 
----
-
-# 1. Initialize Controller
 controller = FeedbackController(num_classes=K, target_probs=[1/K]*K, alpha=8.0)
-
-# 2. Wrap your Dataset
 sampler = FeedbackBatchSampler(labels, batch_size=256, steps_per_epoch=100, controller=controller)
 
-# 3. Training Loop
 for batch_indices in sampler:
-    y = labels[batch_indices]
-    p = controller.get_probs()
-    w = importance_weights(y, controller.q, p)
-    
-    # Apply Importance Weights to the loss
-    loss = (w * criterion(model(x[batch_indices]), y)).mean()
+    y = labels[batch_indices]                        # class ids for the batch
+    p = controller.get_probs()                       # current sampling probs
+    w = importance_weights(y, controller.q, p)       # unbiased IW (mean≈1)
+    loss = (w * criterion(model(x[batch_indices]), torch.as_tensor(y))).mean()
     loss.backward(); optimizer.step(); optimizer.zero_grad()
-    
-    # Update Feedback Controller
-    controller.step_update(y)
-Core Idea (Math)
-1. Negative Feedback Control
+    controller.step_update(y, losses=None)           # or pass per-sample loss for EWMA(loss)
+```
 
-부족한 클래스에 더 높은 샘플링 확률을 부여하여 불균형을 즉각 해소합니다.
+## Core Idea
+- **Negative feedback** counteracts imbalance: under-sampled classes get higher sampling probability.
+- **Softmax control**: `p_i(t) = softmax(α * (λ1 * deficit_i + λ2 * ewma_loss_i))`
+- **Unbiased training**: `w = q[labels] / p[labels]`, normalized to mean 1.
+// p는 매 step 적응, w는 그 p에 정렬되어 bias 0
 
-p 
-i
-​	
- (t)=softmax(α⋅(λ 
-1
-​	
- ⋅deficit 
-i
-​	
- +λ 
-2
-​	
- ⋅ewma_loss 
-i
-​	
- ))
-2. Unbiased Training (Importance Weighting)
+## Stability Tips
+- Set a **probability floor**: `min_prob=1e-6` (default) to avoid extreme weights.
+- If drift is wild: `importance_weights(..., max_w=50.0)`.
+- Consider **α warm-up/cool-down** for smooth adaptation.
+// 초기 급격 튐 방지
 
-샘플링 확률 p가 가변적이더라도 중요도 가중치 w를 통해 데이터 분포 q에 대한 비편향 추정을 유지합니다.
+## Reproducibility
+```python
+import random, numpy as np, torch
+random.seed(42); np.random.seed(42); torch.manual_seed(42)
+if torch.cuda.is_available(): torch.cuda.manual_seed_all(42)
+```
 
-w= 
-p[labels]
-q[labels]
-​
+## Example
+See `train_mnist.py` for a runnable demo (replace with CIFAR-LT/medical/streaming as needed).
+// 예시는 데모용, 어떤 데이터에도 바로 적용 가능
