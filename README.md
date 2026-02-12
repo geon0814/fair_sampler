@@ -57,11 +57,11 @@ for batch_indices in sampler:
 - **Negative Feedback Loop**: Undersampled classes receive higher sampling probability, automatically counteracting class imbalance.
 - **Softmax Control**: Dynamically adjusts sampling distribution using:
   ```
-p_i(t) = softmax(α * (λ₁ * deficit_i + λ₂ * ewma_loss_i))
+$$p_i(t) = \text{softmax}(\alpha \cdot (\lambda_1 \cdot \text{deficit}_i + \lambda_2 \cdot \text{ewma\_loss}_i))$$
   ```
 - **Unbiased Training**: Importance weights normalize gradients:
   ```
-w = q[labels] / p[labels]  (normalized to mean ≈ 1)
+$$w = \frac{q[\text{labels}]}{p[\text{labels}]}$$
   ```
   This ensures zero bias in gradient estimates while the sampler adapts.
 
